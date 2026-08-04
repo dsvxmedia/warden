@@ -146,9 +146,11 @@ repo — nothing summarized away:
 
 - [`docs/BEHIND_THE_SCENES.pdf`](docs/BEHIND_THE_SCENES.pdf) — the full
   build story, plain language, plan to finish.
-- [`docs/learning/`](docs/learning/) — technical write-ups of the two real
-  bugs verification found (a container-leak on timeout, and an implicit
-  2x memory-swap headroom) with before/after evidence.
+- [`docs/learning/`](docs/learning/) — technical write-ups of every real bug
+  verification found: a container-leak on timeout, an implicit 2x
+  memory-swap headroom, and a follow-up adversarial pressure-test pass
+  (fork bombs, corrupted logs, unbounded stdout, misreported containers)
+  that found and fixed four more, all with before/after evidence.
 - [`docs/evidence/`](docs/evidence/) — raw captured command output backing
   every claim above.
 - [`docs/plan/PLAN.md`](docs/plan/PLAN.md) — the plan this session was

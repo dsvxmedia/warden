@@ -60,14 +60,24 @@ export async function logResult(attemptId, { exitCode, durationMs, truncatedOutp
 
 /**
  * Read the last N log entries, newest first. Used by warden-cli logs.
+ *
+ * A single truncated or corrupted line (e.g. from a crash mid-write)
+ * should not deny access to every other entry in an audit log — that
+ * defeats the point of having one. Unparseable lines are skipped, not
+ * fatal.
  */
 export async function readRecentLog(n = 20) {
   await ensureLogDir();
   if (!existsSync(LOG_FILE)) return [];
   const raw = await readFile(LOG_FILE, "utf8");
   const lines = raw.trim().split("\n").filter(Boolean);
-  return lines
-    .slice(-n)
-    .map((l) => JSON.parse(l))
-    .reverse();
+  const parsed = [];
+  for (const l of lines.slice(-n)) {
+    try {
+      parsed.push(JSON.parse(l));
+    } catch {
+      parsed.push({ event: "unparseable", raw: l.slice(0, 200) });
+    }
+  }
+  return parsed.reverse();
 }

@@ -19,9 +19,14 @@ import { getAllowlist } from "../src/egress.js";
 const [, , cmd, ...args] = process.argv;
 
 function dockerPs() {
+  // Filter by the "warden-" name prefix every sandbox container gets
+  // (see sandbox.js's containerName), not by base image — an ancestor
+  // filter would also match any unrelated container someone else happens
+  // to be running from the same image, misreporting it as a live Warden
+  // sandbox.
   const res = spawnSync("docker", [
     "ps",
-    "--filter", "ancestor=" + (process.env.WARDEN_SANDBOX_IMAGE || "alpine:3.20"),
+    "--filter", "name=^/warden-",
     "--format", "{{.ID}}\t{{.Status}}\t{{.Command}}",
   ], { encoding: "utf8" });
   return res.stdout.trim();
@@ -38,7 +43,9 @@ async function main() {
       const n = Number(args[0]) || 20;
       const entries = await readRecentLog(n);
       for (const e of entries) {
-        if (e.event === "attempt") {
+        if (e.event === "unparseable") {
+          console.log(`[?] CORRUPT LOG LINE (skipped)  ${e.raw}`);
+        } else if (e.event === "attempt") {
           console.log(`[${e.ts}] ATTEMPT ${e.id.slice(0, 8)}  ${e.tool}  ${JSON.stringify(e.params)}`);
         } else {
           console.log(`[${e.ts}] RESULT  ${e.attemptId?.slice(0, 8)}  exit=${e.exitCode}  ${e.durationMs}ms${e.error ? "  error=" + e.error : ""}`);

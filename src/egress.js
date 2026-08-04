@@ -32,7 +32,16 @@ export async function getAllowlist() {
   await ensureConfigDir();
   if (!existsSync(ALLOWLIST_FILE)) return [];
   const raw = await readFile(ALLOWLIST_FILE, "utf8");
-  return JSON.parse(raw);
+  try {
+    return JSON.parse(raw);
+  } catch {
+    // A corrupted allowlist file should fail closed (no egress access),
+    // not crash the caller and not be silently misread as some other
+    // value — this is a security control, and "unreadable" must mean
+    // "deny," the same direction as "empty."
+    console.error(`warden: egress allowlist file is corrupted, treating as empty (deny-all): ${ALLOWLIST_FILE}`);
+    return [];
+  }
 }
 
 /**

@@ -107,8 +107,15 @@ export function runSandboxed(command, opts = {}) {
       child.kill("SIGKILL");
     }, DEFAULT_TIMEOUT_MS);
 
-    child.stdout.on("data", (d) => { stdout += d.toString(); });
-    child.stderr.on("data", (d) => { stderr += d.toString(); });
+    // Stop accumulating once past MAX_OUTPUT_CHARS — the final combine
+    // truncates to this length anyway, so buffering more than that on the
+    // host is pure waste, and unbounded here it's a real host-memory DoS:
+    // a flooding command (e.g. `yes`) can grow this string proportional to
+    // (throughput × time), with nothing capping it until the timeout, and
+    // completely independent of the container's own --memory limit (see
+    // docs/learning/unbounded-output-buffering.md).
+    child.stdout.on("data", (d) => { if (stdout.length < MAX_OUTPUT_CHARS) stdout += d.toString(); });
+    child.stderr.on("data", (d) => { if (stderr.length < MAX_OUTPUT_CHARS) stderr += d.toString(); });
 
     child.on("close", (exitCode) => {
       clearTimeout(timer);

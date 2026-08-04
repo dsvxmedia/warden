@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Warden — Behind the Scenes</title>
+<style>
+  @page { size: letter; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  html, body { background: #f4f1ea; }
+  body {
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+    color: #2a2622;
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+  .serif { font-family: Georgia, "Times New Roman", serif; }
+
+  :root {
+    --gold: #b8925a;
+    --gold-light: #d4b483;
+    --dark: #17140f;
+    --dark2: #1f1b14;
+    --cream: #f4f1ea;
+    --cream2: #ece6d8;
+    --ink: #2a2622;
+    --gray: #6b6459;
+  }
+
+  /* ---------- COVER PAGE ---------- */
+  .cover {
+    width: 8.5in;
+    height: 11in;
+    background: var(--dark);
+    background-image: linear-gradient(160deg, #1c1811 0%, #14110c 60%, #100d09 100%);
+    position: relative;
+    page-break-after: always;
+    padding: 0.9in 0.85in;
+    display: flex;
+    flex-direction: column;
+  }
+  .cover::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 10px;
+    background: linear-gradient(90deg, #8a6a3a, var(--gold-light), #8a6a3a);
+  }
+  .cover .eyebrow {
+    color: var(--gold-light);
+    letter-spacing: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-top: 1.6in;
+  }
+  .cover h1 {
+    font-family: Georgia, serif;
+    color: #f5f1e8;
+    font-size: 64px;
+    font-weight: 700;
+    line-height: 1.08;
+    margin-top: 22px;
+  }
+  .cover h2 {
+    font-family: Georgia, serif;
+    color: var(--gold-light);
+    font-size: 46px;
+    font-weight: 700;
+    line-height: 1.08;
+    margin-top: 6px;
+  }
+  .cover .tagline {
+    color: #b9b2a3;
+    font-size: 16px;
+    margin-top: 26px;
+    max-width: 5.6in;
+  }
+  .cover .subtag {
+    color: var(--gold-light);
+    letter-spacing: 3px;
+    font-size: 11.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-top: 18px;
+  }
+  .cover table {
+    margin-top: 40px;
+    border-collapse: collapse;
+    width: 100%;
+  }
+  .cover table th {
+    text-align: left;
+    color: var(--gold-light);
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 12px 16px;
+    border-top: 2px solid var(--gold);
+    border-bottom: 1px solid #3a352a;
+    font-weight: 600;
+  }
+  .cover table td {
+    color: #e8e3d6;
+    font-size: 13px;
+    padding: 12px 16px;
+    border-bottom: 1px solid #2a2620;
+  }
+  .cover .spacer { flex: 1; }
+  .cover .footer {
+    color: #7d7768;
+    font-size: 11px;
+    letter-spacing: 1px;
+    border-top: 1px solid #322d24;
+    padding-top: 16px;
+  }
+
+  /* ---------- CONTENT PAGES ---------- */
+  .page {
+    width: 8.5in;
+    min-height: 11in;
+    background: var(--cream);
+    position: relative;
+    padding: 0 0 0.7in 0;
+  }
+  .section-banner {
+    background: var(--dark);
+    background-image: linear-gradient(120deg, #1c1811 0%, #14110c 100%);
+    color: #fff;
+    padding: 0.5in 0.85in 0.42in 0.85in;
+    display: flex;
+    align-items: flex-start;
+    gap: 26px;
+    page-break-before: always;
+    page-break-inside: avoid;
+  }
+  .section-banner .num {
+    font-family: Georgia, serif;
+    font-size: 54px;
+    font-weight: 700;
+    color: var(--gold-light);
+    line-height: 1;
+    min-width: 1.1in;
+  }
+  .section-banner .titles { padding-top: 6px; }
+  .section-banner .eyebrow {
+    color: #fff;
+    font-size: 17px;
+    letter-spacing: 2px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .section-banner .subtitle {
+    color: #a9a293;
+    font-size: 13px;
+    margin-top: 6px;
+  }
+
+  .content {
+    padding: 0.42in 0.85in 0 0.85in;
+  }
+  .content h3 {
+    font-family: Georgia, serif;
+    font-size: 20px;
+    color: var(--ink);
+    margin-top: 26px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--cream2);
+  }
+  .content h3:first-child { margin-top: 4px; }
+  .content p { margin-bottom: 12px; color: #3a352c; }
+  .content strong { color: var(--ink); }
+  .content code {
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 12px;
+    background: #e9e2d2;
+    color: #5a4a2a;
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+  .content ul, .content ol { margin: 10px 0 16px 22px; }
+  .content li { margin-bottom: 6px; color: #3a352c; }
+
+  .callout {
+    background: var(--cream2);
+    border-left: 3px solid var(--gold);
+    padding: 14px 18px;
+    margin: 16px 0 20px 0;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .callout .diamond { color: var(--gold); font-size: 14px; margin-top: 2px; }
+  .callout p { margin: 0; color: #4a4436; font-style: italic; }
+
+  table.data {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0 22px 0;
+    font-size: 12.5px;
+  }
+  table.data th {
+    background: var(--dark);
+    color: #f0ead9;
+    text-align: left;
+    padding: 9px 12px;
+    font-size: 10.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  table.data td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--cream2);
+    color: #3a352c;
+  }
+  table.data tr:nth-child(even) td { background: #ece6d8; }
+
+  .page-footer {
+    display: flex;
+    justify-content: space-between;
+    padding: 14px 0.85in 0 0.85in;
+    margin-top: 30px;
+    border-top: 1px solid var(--cream2);
+    font-size: 9.5px;
+    color: var(--gray);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ COVER ============ -->
+<div class="cover">
+  <div class="eyebrow">Warden — MCP Sandbox Server</div>
+  <h1>Behind the</h1>
+  <h2>Scenes</h2>
+  <p class="tagline">A true story about checking if a security tool really does what it says.</p>
+  <p class="subtag">From plan to finish, every step included</p>
+  <table>
+    <tr><th>The claim</th><th>The proof</th><th>The result</th></tr>
+    <tr><td>A security README</td><td>Real commands, run for real</td><td>Six real bugs found and fixed</td></tr>
+  </table>
+  <div class="spacer"></div>
+  <div class="footer">dsvxmedia &nbsp;·&nbsp; github.com/dsvxmedia/warden</div>
+</div>
+
+<!-- ============ 01 ============ -->
+<div class="page">
+  <div class="section-banner">
+    <div class="num">01</div>
+    <div class="titles">
+      <div class="eyebrow">Executive overview</div>
+      <div class="subtitle">What this project is, and why someone checked it by hand</div>
+    </div>
+  </div>
+  <div class="content">
+    <h3>What warden is</h3>
+    <p>Warden is a small tool. It lets an AI agent run computer commands inside a locked box, called a container. The box is not the real computer. If something goes wrong inside the box, it should not touch anything outside it.</p>
+    <p>The code for Warden was already written. A file called README.md made a list of promises about how safe the box was. This project was not about writing new code from scratch. It was about checking if those promises were true.</p>
+    <div class="callout"><span class="diamond">&#9670;</span><p>Most tools get built once, then trusted forever. This one got tested before it got trusted.</p></div>
+
+    <h3>Why this mattered</h3>
+    <p>The person who built Warden needed to show it to other people, for a job. They did not want to just say "trust me, it works." They wanted real proof, the kind you can run again yourself and get the same answer.</p>
+    <p>So instead of reading the code and nodding along, every single claim in the README got tested against a real container, running on a real computer, with real Docker software. If a claim could not be shown working in a real terminal, it did not count as true yet.</p>
+  </div>
+  <div class="page-footer"><span>Warden — verification record</span><span>Behind the Scenes</span></div>
+</div>
+
+<!-- ============ 02 ============ -->
+<div class="page">
+  <div class="section-banner">
+    <div class="num">02</div>
+    <div class="titles">
+      <div class="eyebrow">The method</div>
+      <div class="subtitle">How the checking got done, step by step</div>
+    </div>
+  </div>
+  <div class="content">
+    <h3>The rule</h3>
+    <p>Before any code got touched, one rule stayed in place the whole time: <strong>never write down that something works unless you just watched it work.</strong></p>
+    <table class="data">
+      <tr><th>Step</th><th>What happened</th></tr>
+      <tr><td>Read</td><td>Every security file was read start to finish, before anything else</td></tr>
+      <tr><td>Test</td><td>Small scripts were written to run real commands inside the sandbox</td></tr>
+      <tr><td>Watch</td><td>The real output was captured and saved, not just described</td></tr>
+      <tr><td>Fix</td><td>Anything that failed got a real code fix, then got tested again</td></tr>
+      <tr><td>Prove</td><td>Every fix got tested a second time, to make sure it actually worked</td></tr>
+    </table>
+
+    <h3>The scripts</h3>
+    <p>Three small programs got written just for this checking work. They live in a folder called <code>scripts/</code>. Anyone can run them again, right now, on their own computer, and see the same results.</p>
+    <ul>
+      <li><code>verify-timeout-cleanup.js</code> checks if a stuck command really gets killed.</li>
+      <li><code>verify-sandbox.js</code> checks five different safety rules at once.</li>
+      <li><code>verify-memory-limit.js</code> checks if the memory limit is a real limit.</li>
+    </ul>
+  </div>
+  <div class="page-footer"><span>Warden — verification record</span><span>Behind the Scenes</span></div>
+</div>
+
+<!-- ============ 03 ============ -->
+<div class="page">
+  <div class="section-banner">
+    <div class="num">03</div>
+    <div class="titles">
+      <div class="eyebrow">Bug one: the container that wouldn't die</div>
+      <div class="subtitle">A promise that looked true, but wasn't</div>
+    </div>
+  </div>
+  <div class="content">
+    <h3>The promise</h3>
+    <p>The README said Warden has a hard timeout. If a command runs too long, Warden kills it. The words used were "independent of the process's own behavior." That means: no matter what the command is doing, Warden can always stop it.</p>
+
+    <h3>The test</h3>
+    <p>A test command got fifty-nine extra seconds to sleep, but Warden only had three seconds to catch it. Sleep for sixty seconds, but let Warden's own timer break in after three.</p>
+
+    <h3>What actually happened</h3>
+    <p>Warden's timer did go off, right on time. But when the test checked with a real command called <code>docker ps</code>, the container was still running, alive two seconds after Warden believed it was gone.</p>
+    <div class="callout"><span class="diamond">&#9670;</span><p>The container was still running. Warden just wasn't watching anymore.</p></div>
+
+    <h3>Why it happened</h3>
+    <p>Warden was only killing its own helper program, the one that starts the container. It was not killing the container itself. Killing the helper is like hanging up the phone on someone but forgetting the oven is still on. The call ends. The oven does not care.</p>
+
+    <h3>The fix</h3>
+    <p>The fix changed two small things in the file <code>src/sandbox.js</code>.</p>
+    <ol>
+      <li>Every container now gets its own name when it starts.</li>
+      <li>When the timer goes off, Warden now tells Docker to kill that exact container by name, and waits for that to finish, before hanging up the phone.</li>
+    </ol>
+
+    <h3>Proof it worked</h3>
+    <p>The exact same test ran again after the fix. This time, the moment Warden said the command was done, <code>docker ps</code> showed nothing. The container was really gone.</p>
+    <p>The full real output from both the broken version and the fixed version is saved in <code>docs/evidence/timeout-before.txt</code> and <code>docs/evidence/timeout-after.txt</code>. Anyone can read the raw proof.</p>
+  </div>
+  <div class="page-footer"><span>Warden — verification record</span><span>Behind the Scenes</span></div>
+</div>
+
+<!-- ============ 04 ============ -->
+<div class="page">
+  <div class="section-banner">
+    <div class="num">04</div>
+    <div class="titles">
+      <div class="eyebrow">Bug two: the memory limit that wasn't</div>
+      <div class="subtitle">A limit that quietly allowed double</div>
+    </div>
+  </div>
+  <div class="content">
+    <h3>The promise</h3>
+    <p>The README said memory limits stop a runaway program from hurting the computer. Warden lets you set a memory limit, like two hundred fifty six megabytes.</p>
+
+    <h3>The test</h3>
+    <p>A small program tried to use four hundred megabytes of memory, more than a two hundred fifty six megabyte limit should allow. It should have gotten stopped.</p>
+    <p>It did not get stopped. It succeeded. Four hundred megabytes, against a two hundred fifty six megabyte limit, and nothing happened.</p>
+
+    <h3>Why it happened</h3>
+    <p>Docker, the software running the containers, has a second, hidden setting called swap. If you only set a memory limit and never touch the swap setting, Docker quietly doubles your limit on its own. A two hundred fifty six megabyte limit actually behaved like a five hundred twelve megabyte limit.</p>
+    <p>This is not something Warden's code said anywhere. It is just how Docker behaves by default, and nothing in Warden was turning that default off.</p>
+
+    <h3>How it got found</h3>
+    <p>To be sure the memory test itself was fair, three separate checks were run together:</p>
+    <table class="data">
+      <tr><th>Check</th><th>Limit</th><th>Result</th><th>Why it matters</th></tr>
+      <tr><td>Limited run</td><td>64 megabytes</td><td>Killed</td><td>Proves the limit does something</td></tr>
+      <tr><td>Control run</td><td>512 megabytes</td><td>Succeeded</td><td>Proves the kill was about memory, not a broken command</td></tr>
+      <tr><td>Real-world check</td><td>256 megabytes</td><td>Four hundred megabytes got through</td><td>Found the actual gap</td></tr>
+    </table>
+
+    <h3>The fix</h3>
+    <p>The fix added one line to <code>src/sandbox.js</code>. It tells Docker to make the swap limit exactly equal to the memory limit, so there is no hidden extra room.</p>
+
+    <h3>Proof it worked</h3>
+    <p>The same four-hundred-megabyte test ran again after the fix. This time it got killed, exactly as it should have. The full test suite was also rerun to make sure the fix did not break anything that was already working. It did not.</p>
+    <p>Full raw proof lives in <code>docs/evidence/memory-limit-oom-inspect.txt</code>, using a Docker command called <code>docker inspect</code>, which can say for certain that a program was killed for using too much memory, and not for some other reason.</p>
+  </div>
+  <div class="page-footer"><span>Warden — verification record</span><span>Behind the Scenes</span></div>
+</div>
+
+<!-- ============ 05 ============ -->
+<div class="page">
+  <div class="section-banner">
+    <div class="num">05</div>
+    <div class="titles">
+      <div class="eyebrow">Five more checks, and one honest surprise</div>
+      <div class="subtitle">Small things matter too</div>
+    </div>
+  </div>
+  <div class="content">
+    <h3>The checks</h3>
+    <p>Five more promises from the README got tested one at a time, against a real container.</p>
+    <table class="data">
+      <tr><th>Check</th><th>What it proves</th><th>Result</th></tr>
+      <tr><td>Run a simple command</td><td>The sandbox works at all</td><td>Passed</td></tr>
+      <tr><td>Check the user is not root</td><td>A break-in can't gain full power</td><td>Passed, with a note</td></tr>
+      <tr><td>Read a system file</td><td>Reading files still works</td><td>Passed</td></tr>
+      <tr><td>Write outside the safe folder</td><td>Writing should fail everywhere else</td><td>Passed, it failed correctly</td></tr>
+      <tr><td>Try to reach the internet</td><td>No network access by default</td><td>Passed, it failed correctly</td></tr>
+    </table>
+
+    <h3>The honest surprise</h3>
+    <p>One command, called <code>whoami</code>, is supposed to print your username. Inside the sandbox, it printed an error instead: "unknown uid 1000." At first this looked like a bug.</p>
+    <p>It was not a bug in Warden. The tiny operating system used inside the sandbox, called Alpine Linux, does not have a name saved for user number one thousand. The safety rule itself, that the program runs as a low powered user and not as the all-powerful root user, was still completely true. It was proven with a different, more reliable command, called <code>id -u</code>, which does not need a saved name to work.</p>
+    <div class="callout"><span class="diamond">&#9670;</span><p>A command failing is not always a bug. Sometimes it just means you asked the wrong question.</p></div>
+    <p>Both the failure and the real proof are written down together, in <code>docs/evidence/functional-checks.txt</code>. Nothing got hidden or smoothed over.</p>
+  </div>
+  <div class="page-footer"><span>Warden — verification record</span><span>Behind the Scenes</span></div>
+</div>
+
+<!-- ============ 06 ============ -->
+<div class="page">
+  <div class="section-banner">
+    <div class="num">06</div>
+    <div class="titles">
+      <div class="eyebrow">Proving the tools are real, not just described</div>
+      <div class="subtitle">Talking to Warden the same way a real AI agent would</div>
+    </div>
+  </div>
+  <div class="content">
+    <h3>The test</h3>
+    <p>Warden is meant to be used by AI tools, through something called MCP. A real MCP testing program talked to Warden exactly the way Claude or another AI assistant would, not through the project's own homemade test scripts.</p>
+
+    <h3>What got checked</h3>
+    <p>All three of Warden's tools got called for real, one at a time.</p>
+    <table class="data">
+      <tr><th>Tool</th><th>What it does</th><th>Result</th></tr>
+      <tr><td><code>run_sandboxed</code></td><td>Runs a real command in the sandbox</td><td>Ran <code>echo hello</code>, got <code>hello</code> back</td></tr>
+      <tr><td><code>list_audit_log</code></td><td>Shows a history of what ran</td><td>Showed the real command from the step above</td></tr>
+      <tr><td><code>set_egress_allowlist</code></td><td>Sets which websites a sandbox may reach</td><td>Accepted a real list and confirmed it</td></tr>
+    </table>
+    <p>Every one of these worked exactly as the README says. The full real conversation with the testing program is saved in <code>docs/evidence/mcp-inspector-tools-list.txt</code>.</p>
+  </div>
+  <div class="page-footer"><span>Warden — verification record</span><span>Behind the Scenes</span></div>
+</div>
+
+<!-- ============ 07 ============ -->
+<div class="page">
+  <div class="section-banner">
+    <div class="num">07</div>
+    <div class="titles">
+      <div class="eyebrow">Showing the work</div>
+      <div class="subtitle">A real recording, not a mockup</div>
+    </div>
+  </div>
+  <div class="content">
+    <h3>The terminal recording</h3>
+    <p>A tool called <code>vhs</code> recorded a real terminal window while the checking scripts actually ran. Nothing in the recording was typed out after the fact or faked. It shows the real six checks passing, and the real audit log printing real entries.</p>
+
+    <h3>The video</h3>
+    <p>A short video walkthrough builds on that same real recording, with text captions added on top to explain what is happening on screen. No narrator voice was needed, and no invented screens were used. Every frame traces back to a real command that really ran during this session.</p>
+    <p>Both files live in <code>docs/demo/</code>.</p>
+  </div>
+  <div class="page-footer"><span>Warden — verification record</span><span>Behind the Scenes</span></div>
+</div>
+
+<!-- ============ 08 ============ -->
+<div class="page">
+  <div class="section-banner">
+    <div class="num">08</div>
+    <div class="titles">
+      <div class="eyebrow">What is still not done</div>
+      <div class="subtitle">Left honest, not hidden</div>
+    </div>
+  </div>
+  <div class="content">
+    <p>Not every gap gets closed in one sitting, and pretending otherwise would defeat the whole point of this project.</p>
+    <ul>
+      <li>The list of allowed websites can be saved and viewed, but nothing yet actually blocks or allows real network traffic based on that list. The wiring for that is still missing. This was true before this session and is still true now.</li>
+      <li>Warden does not check who is asking it to run a command. It trusts whatever program is talking to it, the same way it always has. Adding a login or identity system is future work, not done here.</li>
+    </ul>
+    <p>The original README already listed both of these honestly, under a section called "Not yet built." Neither one got secretly fixed during this session, so neither one got quietly removed from that list either.</p>
+  </div>
+  <div class="page-footer"><span>Warden — verification record</span><span>Behind the Scenes</span></div>
+</div>
+
+<!-- ============ 09 ============ -->
+<div class="page">
+  <div class="section-banner">
+    <div class="num">09</div>
+    <div class="titles">
+      <div class="eyebrow">A second pass: pressure testing</div>
+      <div class="subtitle">After the first fixes, the system got attacked on purpose</div>
+    </div>
+  </div>
+  <div class="content">
+    <h3>Why a second pass</h3>
+    <p>Checking that the README's claims were true was the first job. After that job was done, a harder question came next: what happens when someone tries to break this on purpose, in ways the README never even claimed to defend against?</p>
+
+    <h3>What held up</h3>
+    <p>A loop that tried to spawn five hundred background processes at once, to test the process-count limit, failed immediately with a real kernel error: "can't fork: Resource temporarily unavailable." A tight, endless loop built to burn CPU stayed capped near fifty percent usage, matching the configured limit exactly. Eight sandboxes were run at the same time with no mix-ups.</p>
+
+    <h3>Four more real bugs</h3>
+    <table class="data">
+      <tr><th>Bug</th><th>What was wrong</th><th>The fix</th></tr>
+      <tr><td>Unbounded memory</td><td>A flooding command could grow the host computer's memory use, with no limit tied to the sandbox's own memory cap</td><td>Output is now capped while it streams in, not just after</td></tr>
+      <tr><td>One bad log line</td><td>A single damaged line in the history file crashed the whole log reader</td><td>Bad lines are now skipped and flagged, not fatal</td></tr>
+      <tr><td>Same bug, second file</td><td>A damaged settings file crashed the allowlist reader too</td><td>A damaged file now safely means "no access," not a crash</td></tr>
+      <tr><td>Wrong sandbox count</td><td>The status command could mistake someone else's unrelated container for a Warden sandbox</td><td>Status now checks the sandbox's real name, not just its base image</td></tr>
+    </table>
+
+    <div class="callout"><span class="diamond">&#9670;</span><p>Every one of these four was found by trying to break something on purpose, not by reading the code and guessing. Every fix was tested again afterward, the same rule as before.</p></div>
+    <p>Full write-up in <code>docs/learning/pressure-test-audit.md</code>.</p>
+  </div>
+  <div class="page-footer"><span>Warden — verification record</span><span>Behind the Scenes</span></div>
+</div>
+
+<!-- ============ 10 ============ -->
+<div class="page">
+  <div class="section-banner">
+    <div class="num">10</div>
+    <div class="titles">
+      <div class="eyebrow">Final summary</div>
+      <div class="subtitle">What was true, what needed fixing, and where to look</div>
+    </div>
+  </div>
+  <div class="content">
+    <h3>What was already true</h3>
+    <p>Most of Warden's promises turned out to be exactly right the first time. No network access by default, a low-powered user inside the sandbox, a read-only file system, and audit logging that happens before a command even runs, all checked out exactly as described.</p>
+
+    <h3>What needed fixing</h3>
+    <p>Six real problems were found across two rounds of checking, all by actually running the code, not by reading it: two from checking the README's own claims, and four more from trying to break the system on purpose afterward.</p>
+
+    <h3>Where everything lives</h3>
+    <table class="data">
+      <tr><th>What</th><th>Where</th></tr>
+      <tr><td>The original plan for this session</td><td><code>docs/plan/PLAN.md</code></td></tr>
+      <tr><td>Technical write-ups of every bug</td><td><code>docs/learning/</code></td></tr>
+      <tr><td>Raw command output, proving every claim</td><td><code>docs/evidence/</code></td></tr>
+      <tr><td>The real recording and video</td><td><code>docs/demo/</code></td></tr>
+      <tr><td>The scripts anyone can rerun</td><td><code>scripts/</code></td></tr>
+      <tr><td>What tools were used to build this</td><td><code>docs/skills-used/</code></td></tr>
+    </table>
+    <div class="callout"><span class="diamond">&#9670;</span><p>Nothing in this document is a summary of a summary. Every claim traces back to a real command, run once, and checked again.</p></div>
+  </div>
+  <div class="page-footer"><span>Warden — verification record</span><span>Behind the Scenes</span></div>
+</div>
+
+</body>
+</html>

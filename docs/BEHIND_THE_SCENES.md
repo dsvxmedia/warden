@@ -314,6 +314,45 @@ session, so neither one got quietly removed from that list either.
 
 ## 09
 
+A SECOND PASS: PRESSURE TESTING
+
+After the first fixes, the system got attacked on purpose
+
+### Why a second pass
+
+Checking that the README's claims were true was the first job. After that
+job was done, a harder question came next: what happens when someone
+tries to break this on purpose, in ways the README never even claimed to
+defend against?
+
+### What held up
+
+A loop that tried to spawn five hundred background processes at once, to
+test the process-count limit, failed immediately with a real kernel
+error: "can't fork: Resource temporarily unavailable." A tight, endless
+loop built to burn CPU stayed capped near fifty percent usage, matching
+the configured limit exactly. Eight sandboxes were run at the same time
+with no mix-ups.
+
+### Four more real bugs
+
+| BUG | WHAT WAS WRONG | THE FIX |
+|---|---|---|
+| Unbounded memory | A flooding command could grow the host computer's memory use, with no limit tied to the sandbox's own memory cap | Output is now capped while it streams in, not just after |
+| One bad log line | A single damaged line in the history file crashed the whole log reader | Bad lines are now skipped and flagged, not fatal |
+| Same bug, second file | A damaged settings file crashed the allowlist reader too | A damaged file now safely means "no access," not a crash |
+| Wrong sandbox count | The status command could mistake someone else's unrelated container for a Warden sandbox | Status now checks the sandbox's real name, not just its base image |
+
+> Every one of these four was found by trying to break something on
+> purpose, not by reading the code and guessing. Every fix was tested
+> again afterward, the same rule as before.
+
+Full write-up in `docs/learning/pressure-test-audit.md`.
+
+---
+
+## 10
+
 FINAL SUMMARY
 
 What was true, what needed fixing, and where to look
@@ -327,23 +366,20 @@ even runs, all checked out exactly as described.
 
 ### What needed fixing
 
-Two real problems were found by actually running the code, not by reading
-it.
+Six real problems were found across two rounds of checking, all by
+actually running the code, not by reading it: two from checking the
+README's own claims, and four more from trying to break the system on
+purpose afterward.
 
-1. A finished command's container could keep running after Warden thought
-   it was dead.
-2. A memory limit could quietly allow almost double what it claimed to
-   allow.
-
-Both got fixed with small, focused changes, and both fixes got tested
-again afterward to prove they actually worked.
+Both rounds got fixed with small, focused changes, and every fix got
+tested again afterward to prove it actually worked.
 
 ### Where everything lives
 
 | WHAT | WHERE |
 |---|---|
 | The original plan for this session | `docs/plan/PLAN.md` |
-| Technical write-ups of both bugs | `docs/learning/` |
+| Technical write-ups of every bug | `docs/learning/` |
 | Raw command output, proving every claim | `docs/evidence/` |
 | The real recording and video | `docs/demo/` |
 | The scripts anyone can rerun | `scripts/` |

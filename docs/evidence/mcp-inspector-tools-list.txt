@@ -1,0 +1,116 @@
+# MCP Inspector CLI verification — real protocol calls against a real MCP client, not the standalone scripts
+timestamp: 2026-08-04T18:19:26Z
+
+## tools/list
+{
+  "tools": [
+    {
+      "name": "run_sandboxed",
+      "title": "Run command in sandbox",
+      "description": "Executes a shell command inside a locked-down, ephemeral Docker container: non-root, all capabilities dropped, read-only filesystem, resource-limited, and no network access unless an egress allowlist has been explicitly configured. Every call is audit-logged before execution.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Shell command to run inside the sandbox"
+          },
+          "network": {
+            "type": "string",
+            "enum": [
+              "none",
+              "allowlist"
+            ],
+            "default": "none",
+            "description": "Network mode. 'none' (default) has no network access at all. 'allowlist' routes through the configured egress allowlist."
+          }
+        },
+        "required": [
+          "command"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "list_audit_log",
+      "title": "List recent sandbox executions",
+      "description": "Returns the most recent sandbox execution attempts and their results, newest first.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "default": 20
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "set_egress_allowlist",
+      "title": "Set sandbox egress allowlist",
+      "description": "Replaces the list of domains a sandbox may reach when run with network: 'allowlist'. An empty list disables all outbound access, identical to network: 'none'.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "domains": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Domains to allow, e.g. ['api.example.com']"
+          }
+        },
+        "required": [
+          "domains"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    }
+  ]
+}
+
+## tools/call run_sandboxed (command: echo hello)
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "Exit code 0 in 190ms.\n\nhello\n"
+    }
+  ]
+}
+
+## tools/call list_audit_log (limit: 3)
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "[\n  {\n    \"id\": \"d4761096-855e-45ea-8933-aac81a535481\",\n    \"attemptId\": \"6e1314c1-3d5b-4fe7-bff8-8ea656adcdac\",\n    \"ts\": \"2026-08-04T18:19:28.935Z\",\n    \"event\": \"result\",\n    \"exitCode\": 0,\n    \"durationMs\": 190,\n    \"truncatedOutput\": \"hello\\n\",\n    \"error\": null\n  },\n  {\n    \"id\": \"6e1314c1-3d5b-4fe7-bff8-8ea656adcdac\",\n    \"ts\": \"2026-08-04T18:19:28.744Z\",\n    \"event\": \"attempt\",\n    \"tool\": \"run_sandboxed\",\n    \"params\": {\n      \"command\": \"echo hello\",\n      \"network\": \"none\"\n    },\n    \"requestedBy\": \"mcp-client\"\n  },\n  {\n    \"id\": \"f2cd5654-9460-4dce-a93b-7d0bc9bae9ff\",\n    \"attemptId\": \"74eae917-9d61-4a92-836f-e1181830b039\",\n    \"ts\": \"2026-08-04T18:18:48.068Z\",\n    \"event\": \"result\",\n    \"exitCode\": 0,\n    \"durationMs\": 287,\n    \"truncatedOutput\": \"hello\\n\",\n    \"error\": null\n  }\n]"
+    }
+  ]
+}
+
+## tools/call set_egress_allowlist (domains: [api.example.com, cdn.example.com])
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "Egress allowlist updated: api.example.com, cdn.example.com"
+    }
+  ]
+}

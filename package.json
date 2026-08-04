@@ -1,0 +1,23 @@
+{
+  "name": "warden-mcp",
+  "version": "0.1.0",
+  "description": "Sandboxed, egress-controlled MCP tool execution server. Runs agent-requested commands inside a locked-down Docker container: non-root, capabilities dropped, resource-limited, no network by default. Every execution is audit-logged before it runs.",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "warden-cli": "cli/warden-cli.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "cli": "node cli/warden-cli.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "dotenv": "^16.4.5",
+    "zod": "^3.23.8"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

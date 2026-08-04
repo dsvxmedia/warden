@@ -1,0 +1,19 @@
+# verify-timeout-cleanup (before)
+timestamp: 2026-08-04T18:10:33.668Z
+WARDEN_TIMEOUT_MS: 3000
+image: alpine:3.20
+
+## baseline `docker ps` (before running the sandboxed sleep)
+(empty)
+
+## running: runSandboxed("sleep 60") with a short timeout, expecting it to be force-killed
+resolved after 3011ms: {"exitCode":null,"durationMs":3011,"truncatedOutput":"","timedOut":true}
+
+## `docker ps` immediately after the call resolved
+3e54e3e70397	Up 2 seconds	"sh -c 'sleep 60'"
+
+[FAIL] Container is still running after the timeout fired. The
+       'hard timeout... independent of the process's own behavior'
+       claim does not hold: SIGKILL to the docker CLI client did not
+       stop the container on the daemon side.
+       cleaning up orphaned container 3e54e3e70397 now (docker kill)

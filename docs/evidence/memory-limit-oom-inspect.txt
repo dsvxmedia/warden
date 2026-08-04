@@ -1,0 +1,13 @@
+# verify-memory-limit (oom-inspect)
+timestamp: 2026-08-04T18:17:19.567Z
+container: warden-oom-check-1785867439567
+command: docker run --name warden-oom-check-1785867439567 --network none --cap-drop=ALL --security-opt no-new-privileges --read-only --tmpfs /tmp/warden-scratch:rw,size=64m,mode=1777 --user 1000:1000 --memory 64m --cpus 0.5 --pids-limit 64 alpine:3.20 sh -c x=$(head -c 150000000 /dev/zero | tr '\0' 'a'); echo done
+
+run exit status: 137, signal: null
+stdout: ""
+stderr: ""
+
+docker inspect --format='{{.State.OOMKilled}} exitCode={{.State.ExitCode}}': true exitCode=137
+cleanup (docker rm): warden-oom-check-1785867439567
+
+[PASS] docker inspect confirms OOMKilled=true — the memory limit was actually enforced by the kernel cgroup, not just passed as an unvalidated flag.

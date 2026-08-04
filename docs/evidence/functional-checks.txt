@@ -1,0 +1,14 @@
+[PASS] echo hello
+       exitCode=0, output="hello"
+[PASS] non-root UID (id -u; whoami itself errors on stock alpine, see detail)
+       id -u: exitCode=0, output="1000" | whoami: exitCode=1, output="[stderr]\nwhoami: unknown uid 1000"
+[PASS] cat /etc/os-release (read on read-only fs)
+       exitCode=0, output starts with: "NAME=\"Alpine Linux\"\nID=alpine\nVERSION_ID"
+[PASS] touch /this-should-fail (must fail — proves --read-only)
+       exitCode=1, stderr="[stderr]\ntouch: /this-should-fail: Read-only file system"
+[PASS] touch /tmp/warden-scratch/... (control — must succeed)
+       exitCode=0, output="wrote-ok"
+[PASS] wget example.com with network:none (must fail — proves network isolation)
+       exitCode=1, durationMs=5203, output="wget: bad address 'example.com'"
+
+6/6 checks passed

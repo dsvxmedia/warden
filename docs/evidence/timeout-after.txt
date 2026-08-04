@@ -1,0 +1,16 @@
+# verify-timeout-cleanup (after)
+timestamp: 2026-08-04T18:12:11.339Z
+WARDEN_TIMEOUT_MS: 3000
+image: alpine:3.20
+
+## baseline `docker ps` (before running the sandboxed sleep)
+(empty)
+
+## running: runSandboxed("sleep 60") with a short timeout, expecting it to be force-killed
+resolved after 3073ms: {"exitCode":null,"durationMs":3073,"truncatedOutput":"","timedOut":true}
+
+## `docker ps` immediately after the call resolved
+(empty)
+
+[PASS] No container from this image is running after the timeout fired.
+       The container was actually stopped, not just the local client.
